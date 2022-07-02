@@ -19,4 +19,20 @@
 
         return $sql;
     }
+
+    function generateSelectQuery($table, $columns = ['*'], $conditions = []){
+        $columnsToSelect = implode(',', $columns);
+        $sql = "SELECT $columnsToSelect FROM $table WHERE 1=1 ";
+        foreach($conditions as $key => $value){
+            $sql .= " AND  $key = '$value' ";
+        }
+        return $sql;
+    }
+
+    function authorize(){
+        if(!isset($_SESSION['login']) || $_SESSION['login'] !== true){
+            header('location:login.php');
+        }
+    } 
+
 ?>

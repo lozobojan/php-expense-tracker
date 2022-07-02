@@ -19,12 +19,22 @@
 <body class="hold-transition register-page">
 <div class="custom-register-box mt-5">
   <div class="register-logo">
-    <a href="./index2.html"><b>Expense</b>Tracker</a>
+    <a href="#"><b>Expense</b>Tracker</a>
   </div>
 
   <div class="card">
     <div class="card-body register-card-body">
       <p class="login-box-msg">Registracija</p>
+
+      <?php
+        $errorMessage = "";
+        if(isset($_GET['err']) && $_GET['err'] == 1){
+          $errorMessage = "Morate potvrditi lozinku!";
+        }elseif(isset($_GET['err']) && $_GET['err'] == 2){
+          $errorMessage = "Morate prihvatiti uslove korišćenja!";
+        }
+      ?>
+      <div class="alert alert-danger text-center <?php $errorMessage != "" ? 'd-none' : ''; ?> "><?=$errorMessage?></div>
 
       <form action="./backend/auth/register.php" method="post">
         <div class="input-group mb-3">
@@ -70,7 +80,7 @@
         <div class="row">
           <div class="col-8">
             <div class="icheck-primary">
-              <input type="checkbox" id="agree_terms" name="terms" value="1" name="agree_terms">
+              <input type="checkbox" id="agree_terms" name="agree_terms" value="1" name="agree_terms">
               <label for="agree_terms">
                Prihvatam <a href="#">uslove korišćenja</a>
               </label>
