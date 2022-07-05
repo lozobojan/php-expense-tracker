@@ -66,44 +66,32 @@
     <section class="content">
       <div class="container-fluid">
 
-      <div class="row mb-3">
-            <div class="col-12">
-                <a href="./expenses/create.php" class="btn btn-primary float-right">Dodaj novi trošak</a>
-            </div>
-        </div>
-
         <table class="table table-bordered table-striped">
             <thead>
                 <tr>
                     <th>Tip</th>
-                    <th>Podtip</th>
                     <th>Iznos</th>
-                    <th>Datum</th>
-                    <th>Opis</th>
                 </tr>
             </thead>
 
             <tbody>
                 <?php 
-                
-                    $sql = "SELECT expenses.*,
-                                DATE_FORMAT(date, '%d.%m.%Y %H:%i') as date_formatted, 
-                                types.name as type_name,
-                                subtypes.name as subtype_name
-                            FROM expenses
-                            JOIN types ON types.id = expenses.type_id 
-                            JOIN subtypes ON subtypes.id = expenses.subtype_id
+                    $user_id = $_SESSION['user']['id'];
+                    $sql = "SELECT 
+                                t.name as type_name,
+                                COALESCE(sum(amount), 0) as total
+                            from types t
+                            left join expenses e on e.type_id = t.id
+                            where e.user_id = $user_id
+                            GROUP BY t.name
+                            ORDER BY 2 DESC
                     ";
                     $res = mysqli_query($db_conn, $sql);
 
                     while($row = mysqli_fetch_assoc($res)){
                         echo "<tr>";
                         echo "  <td>".$row['type_name']."</td>";
-                        echo "  <td>".$row['subtype_name']."</td>";
-                        echo "  <td>".number_format($row['amount'], 2)." €</td>";
-                        // echo "  <td>".date('d.m.Y H:i:s', strtotime($row['date']) )."</td>";
-                        echo "  <td>".$row['date_formatted']."</td>";
-                        echo "  <td>".$row['description']."</td>";
+                        echo "  <td>".number_format($row['total'], 2)." €</td>";
                         echo "</tr>";
                     }
 
