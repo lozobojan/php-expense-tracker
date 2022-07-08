@@ -38,18 +38,28 @@
         
           <li class="nav-header">Meni</li>
           <li class="nav-item">
-            <a href="<?=$appUrl?>/index.php" class="nav-link active">
-              <i class="nav-icon far fa-calendar-alt"></i>
+            <a href="<?=$appUrl?>/index.php" class="nav-link <?php if($activePage == 'dashboard') echo "active"; ?>">
+              <i class="nav-icon fas fa-list"></i>
               <p>
                 Evidencija troškova
               </p>
             </a>
           </li>
+
           <li class="nav-item">
-            <a href="<?=$appUrl?>/reports.php" class="nav-link">
-              <i class="nav-icon far fa-calendar-alt"></i>
+            <a href="<?=$appUrl?>/reports.php" class="nav-link <?php if($activePage == 'reports') echo "active"; ?> ">
+              <i class="nav-icon fas fa-chart-pie"></i>
               <p>
                 Statistika
+              </p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="<?=$appUrl?>/settings.php" class="nav-link <?php if($activePage == 'settings') echo "active"; ?> ">
+              <i class="nav-icon fas fa-cog"></i>
+              <p>
+                Podešavanja
               </p>
             </a>
           </li>

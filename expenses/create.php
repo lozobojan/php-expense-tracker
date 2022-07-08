@@ -6,6 +6,8 @@
     include '../config.php';
     authorize();
 
+    $user_id = $_SESSION['user']['id'];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -66,7 +68,7 @@
     <section class="content">
       <div class="container-fluid">
 
-        <form action="save.php" method="POST">
+        <form action="save.php" method="POST" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-3">
                     <label for="date">Datum:</label>
@@ -88,7 +90,11 @@
                     <select name="type" id="type" class="form-control" onchange="loadSubtypes()">
                         <option value="">- odaberite tip -</option>
                         <?php 
-                            $sql = "SELECT * FROM types ORDER BY name";
+                            $sql = "SELECT id, name FROM types 
+                                      WHERE EXISTS (
+                                        select * from user_type where user_id = $user_id and type_id = types.id
+                                      )
+                                    ORDER BY name";
                             $res = mysqli_query($db_conn, $sql);
 
                             while($row = mysqli_fetch_assoc($res)){
@@ -109,6 +115,12 @@
                 <div class="col-12">
                     <label for="description">Opis:</label>
                     <textarea name="description" id="description" class="form-control" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-4 offset-4">
+                    <input type="file" name="files[]" multiple class="form-control">
                 </div>
             </div>
 
@@ -160,10 +172,6 @@
 <script src="../plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
 <script src="../dist/js/adminlte.js"></script>
-<!-- AdminLTE for demo purposes -->
-<script src="../dist/js/demo.js"></script>
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="../dist/js/pages/dashboard.js"></script>
 
 <script>
     async function loadSubtypes(){

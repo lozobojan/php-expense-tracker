@@ -6,6 +6,8 @@
     include './config.php';
     authorize();
 
+    $user_id = $_SESSION['user']['id'];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,7 +40,7 @@
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
   
-  <?php $activePage = "reports"; ?>
+  <?php $activePage = "settings"; ?>
   <?php include "./partials/navbar.php"; ?>
   <?php include "./partials/aside.php"; ?>
 
@@ -67,60 +69,47 @@
     <section class="content">
       <div class="container-fluid">
 
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th>Tip</th>
-                    <th>Iznos</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <?php 
-                    $user_id = $_SESSION['user']['id'];
-                    $chartData = [];
-                    $sql = "SELECT 
-                                t.name as type_name,
-                                t.color,
-                                COALESCE(sum(amount), 0) as total
-                            from types t
-                            left join expenses e on e.type_id = t.id
-                            where e.user_id = $user_id
-                            GROUP BY t.name, t.color
-                            ORDER BY 3 DESC
-                    ";
-                    $res = mysqli_query($db_conn, $sql);
-
-                    while($row = mysqli_fetch_assoc($res)){
-                        $chartData[] = $row;
-                        echo "<tr>";
-                        echo "  <td>".$row['type_name']."</td>";
-                        echo "  <td>".number_format($row['total'], 2)." €</td>";
-                        echo "</tr>";
-                    }
-
-                ?>
-            </tbody>
-        </table>
-
-        <div class="row">
-          <div class="col-12">
+      <div class="row">
+          <div class="col-6">
             <!-- PIE CHART -->
             <div class="card card-primary">
               <div class="card-header">
-                <h3 class="card-title">Grafik troškova</h3>
+                <h3 class="card-title">Tipovi koje koristim</h3>
 
                 <div class="card-tools">
                   <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
                   </button>
-                  <button type="button" class="btn btn-tool" data-card-widget="remove">
-                    <i class="fas fa-times"></i>
-                  </button>
                 </div>
               </div>
               <div class="card-body">
-                <canvas id="pieChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                <?php 
+                
+                    $sql = "SELECT 
+                                id, 
+                                name, 
+                                (
+                                    select count(*) from user_type 
+                                        where type_id = types.id 
+                                        and user_id = $user_id
+                                ) as has_type 
+                                from types";
+                    $res = mysqli_query($db_conn, $sql);
+
+                    while($row = mysqli_fetch_assoc($res)){
+                        $idTemp = $row['id'];
+                        $nameTemp = $row['name'];
+                        $isChecked = $row['has_type'] == 1 ? "checked" : "";
+                        echo "
+                            <div class=\"row\">
+                                <div class=\"col-12\">
+                                    <input type=\"checkbox\" onchange=\"addRemoveType($idTemp)\" id=\"chk$idTemp\" value=\"1\" $isChecked >
+                                    <label for=\"chk$idTemp\">$nameTemp</label>
+                                </div>
+                            </div>
+                        ";
+                    }
+                ?>
               </div>
               <!-- /.card-body -->
             </div>
@@ -170,51 +159,13 @@
 <!-- AdminLTE App -->
 <script src="dist/js/adminlte.js"></script>
 
-<!-- AdminLTE for demo purposes -->
-<!-- <script src="dist/js/demo.js"></script> -->
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<!-- <script src="dist/js/pages/dashboard.js"></script> -->
-
 <script>
-  var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
-  var pieData        = {
-      labels: [
-          <?php 
-            foreach($chartData as $row){
-              echo "'".$row['type_name']."',";
-            }
-          ?>
-      ],
-      datasets: [
-        {
-          data: [
-            <?php 
-              foreach($chartData as $row){
-                echo $row['total'].",";
-              }
-            ?>
-          ],
-          backgroundColor : [
-            <?php 
-              foreach($chartData as $row){
-                echo "'".$row['color']."',";
-              }
-            ?>
-          ],
-        }
-      ]
-    };
-    var pieOptions     = {
-      maintainAspectRatio : false,
-      responsive : true,
+    async function addRemoveType(type_id){
+        let response = await fetch("<?=$appUrl?>/types/add_remove_type.php?type_id="+type_id);
+        let responseJSON = await response.json();
+
+        // alert(responseJSON.msg);
     }
-
-    new Chart(pieChartCanvas, {
-      type: 'pie',
-      data: pieData,
-      options: pieOptions
-    })
-
 </script>
 
 </body>

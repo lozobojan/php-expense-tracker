@@ -5,6 +5,9 @@
     include '../backend/connect.php';
     authorize();
 
+    var_dump($_FILES);
+    exit;
+
     $date = readInput($_POST, 'date')." ".readInput($_POST, 'time');
     $amount = readInput($_POST, 'amount');
     $type_id = readInput($_POST, 'type');
