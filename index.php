@@ -81,6 +81,7 @@
                     <th>Iznos</th>
                     <th>Datum</th>
                     <th>Opis</th>
+                    <th>Fajlovi</th>
                 </tr>
             </thead>
 
@@ -90,7 +91,8 @@
                     $sql = "SELECT expenses.*,
                                 DATE_FORMAT(date, '%d.%m.%Y %H:%i') as date_formatted, 
                                 types.name as type_name,
-                                subtypes.name as subtype_name
+                                subtypes.name as subtype_name,
+                                (select count(*) from attachments where expense_id = expenses.id) as attachments
                             FROM expenses
                             JOIN types ON types.id = expenses.type_id 
                             JOIN subtypes ON subtypes.id = expenses.subtype_id
@@ -98,6 +100,12 @@
                     $res = mysqli_query($db_conn, $sql);
 
                     while($row = mysqli_fetch_assoc($res)){
+
+                        $disabled = "";
+                        if($row['attachments'] == 0) $disabled = "disabled";
+
+                        $idTemp = $row['id'];
+
                         echo "<tr>";
                         echo "  <td>".$row['type_name']."</td>";
                         echo "  <td>".$row['subtype_name']."</td>";
@@ -105,6 +113,9 @@
                         // echo "  <td>".date('d.m.Y H:i:s', strtotime($row['date']) )."</td>";
                         echo "  <td>".$row['date_formatted']."</td>";
                         echo "  <td>".$row['description']."</td>";
+                        echo "  <td>
+                                  <button data-toggle=\"modal\" data-target=\"#attachmentsModal\" class=\"btn btn-primary btn-sm $disabled\" onclick=\"displayAttachments($idTemp)\">priloženi fajlovi</button>
+                                </td>";
                         echo "</tr>";
                     }
 
@@ -119,6 +130,40 @@
   <!-- /.content-wrapper -->
 
   <?php include "./partials/footer.php"; ?>
+  
+  <div class="modal fade" id="attachmentsModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Priloženi fajlovi</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body table-responsive">
+        
+         <div class="row" id="loadingIcon">
+          <div class="col-12 text-center">
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+          </div>
+         </div>           
+
+          <table class="table table-hover d-none" id="attachmentsTable">
+            <thead>
+              <tr>
+                <th>Sistemsko ime</th>
+                <th>Preuzmi</th>
+              </tr>
+            </thead>
+            <tbody id="attachmentsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Zatvori</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 <!-- ./wrapper -->
@@ -153,6 +198,24 @@
 <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
 <script src="dist/js/adminlte.js"></script>
+
+<script>
+  async function displayAttachments(expense_id){
+    let response = await fetch("<?=$appUrl?>/expenses/get_attachments.php?expense_id="+expense_id);
+    let responseJSON = await response.json();
+
+    let tableHTML = '';
+    responseJSON.forEach( (att) => {
+      let downloadBtn = `<a download href="${att.path}" class="btn btn-sm btn-success" >preuzmi</a>`;
+      tableHTML += `<tr> <td>${att.path}</td> <td>${downloadBtn}</td> </tr>`;
+    })
+
+    document.getElementById("attachmentsTableBody").innerHTML = tableHTML;
+    document.getElementById("attachmentsTable").classList.remove('d-none');
+    document.getElementById("loadingIcon").classList.add('d-none');
+
+  }
+</script>
 
 <!-- AdminLTE for demo purposes -->
 <!-- <script src="dist/js/demo.js"></script> -->
