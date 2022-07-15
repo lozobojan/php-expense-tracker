@@ -67,12 +67,71 @@
     <section class="content">
       <div class="container-fluid">
 
-      <div class="row mb-3">
+        <div class="row mb-3">
             <div class="col-12">
                 <a href="./expenses/create.php" class="btn btn-primary float-right">Dodaj novi trošak</a>
             </div>
         </div>
 
+        <form action="index.php" method="GET" id="filterForm">
+          <div class="row mb-3">
+            <div class="col-2">
+              <select class="form-control" name="length" id="lengthSelector">
+                <option value="-1">- prikaži sve -</option>
+                <option value="5" <?= isset($_GET['length']) && $_GET['length'] == 5 ? 'selected' : '' ?> >5</option>
+                <option value="10" <?= isset($_GET['length']) && $_GET['length'] == 10 ? 'selected' : '' ?>>10</option>
+                <option value="20" <?= isset($_GET['length']) && $_GET['length'] == 20 ? 'selected' : '' ?>>20</option>
+              </select> 
+            </div>
+            
+            <div class="col-2">
+              <input type="date" name="date_from" class="form-control" placeholder="Datum od" value="<?= isset($_GET['date_from']) ? $_GET['date_from'] : '' ?>" >
+            </div>
+
+            <div class="col-2">
+              <input type="date" name="date_to" class="form-control" placeholder="Datum do" value="<?= isset($_GET['date_to']) ? $_GET['date_to'] : '' ?>">
+            </div>
+
+            <div class="col-2">
+              <select class="form-control" name="type_id" id="typeFilter">
+                <option value="-1">- prikaži sve -</option>
+                <?php 
+                  $res = mysqli_query($db_conn, generateSelectQuery('types'));
+                  while($row = mysqli_fetch_assoc($res)){
+                    $idTemp = $row['id'];
+                    $nameTemp = $row['name'];
+                    $selected = "";
+                    if(isset($_GET['type_id']) && $_GET['type_id'] == $idTemp) $selected = "selected";
+                    echo "<option value=\"$idTemp\" $selected>$nameTemp</option>";
+                  }
+                ?>
+              </select> 
+            </div>
+
+            <div class="col-3">
+              <div class="row">
+                <div class="col-6"> 
+                    <input type="number" name="amount_from" id="amountFromFilter" class="form-control" placeholder="Iznos od" value="<?= isset($_GET['amount_from']) ? $_GET['amount_from'] : '' ?>">
+                </div>
+
+                <div class="col-6"> 
+                    <input type="number" name="amount_to" id="amountToFilter" class="form-control" placeholder="Iznos do" value="<?= isset($_GET['amount_to']) ? $_GET['amount_to'] : '' ?>">
+                </div>
+              </div>
+            </div>
+
+            <div class="col-1">
+              <div class="row">
+                <div class="col-6">
+                  <button class="btn btn-success btn-block"> <i class="fas fa-search"></i> </button>
+                </div>
+                <div class="col-6">
+                  <button type="button" onclick="clearForm()" class="btn btn-danger btn-block"> <i class="fas fa-times"></i> </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
         <table class="table table-bordered table-striped">
             <thead>
                 <tr>
@@ -87,7 +146,18 @@
 
             <tbody>
                 <?php 
-                
+
+                    $where = " 1=1 ";
+                    if(isset($_GET['length'])) $length = " LIMIT ".$_GET['length'];
+                    else $length = "";
+
+                    if(isset($_GET['type_id']) && $_GET['type_id'] != "-1") $where .= " AND expenses.type_id = ".$_GET['type_id'];
+                    if(isset($_GET['date_from']) && $_GET['date_from'] != "") $where .= " AND date >= '".$_GET['date_from']."'";
+                    if(isset($_GET['date_to']) && $_GET['date_to'] != "") $where .= " AND date <= '".$_GET['date_to']."'";
+                    if(isset($_GET['amount_from']) && $_GET['amount_from'] != "") $where .= " AND amount >= ".$_GET['amount_from'];
+                    if(isset($_GET['amount_to']) && $_GET['amount_to'] != "") $where .= " AND amount <= ".$_GET['amount_to'];
+
+
                     $sql = "SELECT expenses.*,
                                 DATE_FORMAT(date, '%d.%m.%Y %H:%i') as date_formatted, 
                                 types.name as type_name,
@@ -96,10 +166,14 @@
                             FROM expenses
                             JOIN types ON types.id = expenses.type_id 
                             JOIN subtypes ON subtypes.id = expenses.subtype_id
+                            WHERE $where
+                            $length
                     ";
                     $res = mysqli_query($db_conn, $sql);
 
+                    $queryData = [];
                     while($row = mysqli_fetch_assoc($res)){
+                        $queryData[] = $row;
 
                         $disabled = "";
                         if($row['attachments'] == 0) $disabled = "disabled";
@@ -118,10 +192,17 @@
                                 </td>";
                         echo "</tr>";
                     }
-
+                    
+                    $_SESSION['exportData'] = $queryData;
                 ?>
             </tbody>
         </table>
+
+        <div class="row my-3">
+          <div class="col-12">
+            <a class="btn btn-success" href="./xlsx_export.php">Izvoz u XLSX</a>
+          </div>
+        </div>
 
       </div><!-- /.container-fluid -->
     </section>
@@ -214,6 +295,11 @@
     document.getElementById("attachmentsTable").classList.remove('d-none');
     document.getElementById("loadingIcon").classList.add('d-none');
 
+  }
+
+  function clearForm(){
+    window.location.href = "index.php";
+    // document.getElementById("filterForm").reset();
   }
 </script>
 
